@@ -4,11 +4,11 @@ La consulta la hace la PC cada CLIMA_CADA_MIN en segundo plano y la guarda en cl
 La landing solo lee la caché: nunca espera a internet.
 """
 import asyncio
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import httpx
 
-from config import CLIMA_CADA_MIN, CLIMA_VALIDO_HORAS, LOCAL_ID
+from config import CLIMA_CADA_MIN, CLIMA_VALIDO_HORAS, LOCAL_ID, ahora
 from db import SessionLocal
 from models import ClimaCache
 from services import ajustes
@@ -56,7 +56,7 @@ async def actualizar() -> None:
         fila = db.get(ClimaCache, LOCAL_ID) or ClimaCache(local_id=LOCAL_ID)
         fila.temp = float(actual["temperature_2m"])
         fila.codigo = int(actual["weather_code"])
-        fila.actualizado = datetime.now()
+        fila.actualizado = ahora()
         db.merge(fila)
         db.commit()
     finally:
@@ -74,7 +74,7 @@ async def bucle() -> None:
 
 def leer(db, cfg: dict[str, str]) -> dict | None:
     fila = db.get(ClimaCache, LOCAL_ID)
-    if not fila or datetime.now() - fila.actualizado > timedelta(hours=CLIMA_VALIDO_HORAS):
+    if not fila or ahora() - fila.actualizado > timedelta(hours=CLIMA_VALIDO_HORAS):
         return None
     emoji, desc = icono(fila.codigo)
     return {

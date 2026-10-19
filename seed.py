@@ -1,12 +1,13 @@
 """Crea las tablas y, si la BD está vacía, el local, el primer admin y una carta de ejemplo."""
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import inspect, select, text
 
-from config import ADMIN_PASS, ADMIN_USER, LOCAL_ID
+from config import ADMIN_PASS, ADMIN_PASS_GENERADA, ADMIN_USER, LOCAL_ID
 from db import Base, SessionLocal, engine
 from models import Categoria, Local, Producto, Staff
 from security import hash_clave
+from services import catalogo
 
 # (categoría, emoji, [(nombre, descripción, precio, emoji, propio, temperatura, destacado)])
 CARTA_EJEMPLO = [
@@ -46,8 +47,20 @@ CARTA_EJEMPLO = [
 ]
 
 
+def _columnas_nuevas() -> None:
+    """create_all no agrega columnas a tablas que ya existen: las de la integración con admintienda van aquí."""
+    existentes = {c["name"] for c in inspect(engine).get_columns("productos")}
+    verdadero = "1" if engine.dialect.name == "sqlite" else "true"
+    nuevas = {"externo_id": "VARCHAR(36)", "disponible": f"BOOLEAN NOT NULL DEFAULT {verdadero}", "foto_origen": "VARCHAR(300)"}
+    with engine.begin() as con:
+        for col, tipo in nuevas.items():
+            if col not in existentes:
+                con.execute(text(f"ALTER TABLE productos ADD COLUMN {col} {tipo}"))
+
+
 def iniciar() -> None:
     Base.metadata.create_all(engine)
+    _columnas_nuevas()
     with SessionLocal() as db:
         if not db.get(Local, LOCAL_ID):
             db.add(Local(id=LOCAL_ID, nombre="Chinkana Ayacucho"))
@@ -56,9 +69,13 @@ def iniciar() -> None:
         if not db.scalar(select(Staff).where(Staff.local_id == LOCAL_ID)):
             db.add(Staff(local_id=LOCAL_ID, usuario=ADMIN_USER, nombre="Administrador",
                          clave_hash=hash_clave(ADMIN_PASS), rol="admin"))
-            print(f"Admin creado: usuario '{ADMIN_USER}'. Cambia la clave en .env antes de producción.")
+            if ADMIN_PASS_GENERADA:
+                print(f"Admin creado: usuario '{ADMIN_USER}', clave '{ADMIN_PASS}' (generada: no había ADMIN_PASS).")
+            else:
+                print(f"Admin creado: usuario '{ADMIN_USER}' con la clave de ADMIN_PASS.")
 
-        if not db.scalar(select(Categoria).where(Categoria.local_id == LOCAL_ID)):
+        # Con admintienda la carta llega sola al sincronizar; el ejemplo es solo para probar sin POS.
+        if not catalogo.configurado() and not db.scalar(select(Categoria).where(Categoria.local_id == LOCAL_ID)):
             for i, (cat, emoji, productos) in enumerate(CARTA_EJEMPLO):
                 c = Categoria(local_id=LOCAL_ID, nombre=cat, emoji=emoji, orden=i)
                 db.add(c)

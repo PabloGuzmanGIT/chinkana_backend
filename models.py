@@ -5,11 +5,8 @@ from decimal import Decimal
 from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
+from config import ahora  # noqa: F401  (default= de las columnas)
 from db import Base
-
-
-def ahora():
-    return datetime.now()
 
 
 class Local(Base):
@@ -109,6 +106,37 @@ class Producto(Base):
     destacado: Mapped[bool] = mapped_column(Boolean, default=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
     orden: Mapped[int] = mapped_column(Integer, default=0)
+    # Con la integración, nombre, descripción, precio, foto y disponibilidad vienen de admintienda (services/catalogo.py).
+    externo_id: Mapped[str | None] = mapped_column(String(36), index=True)   # id del producto en admintienda
+    disponible: Mapped[bool] = mapped_column(Boolean, default=True)           # hay stock hoy, según el POS
+    foto_origen: Mapped[str | None] = mapped_column(String(300))              # URL de Cloudinary de la que salió `foto`
+
+
+class Contenido(Base):
+    """Tarjeta del portal de contenidos en /listo: recetas, tours, marcas aliadas, novedades.
+
+    Siempre enlaza a un destino real (web, catálogo, red social). Las secciones sin tarjetas no se muestran.
+    """
+    __tablename__ = "contenidos"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    local_id: Mapped[int] = mapped_column(ForeignKey("locales.id"), index=True)
+    seccion: Mapped[str] = mapped_column(String(12))                  # sabores | turismo | marcas | novedades
+    titulo: Mapped[str] = mapped_column(String(100))
+    resumen: Mapped[str] = mapped_column(Text, default="")
+    imagen: Mapped[str | None] = mapped_column(String(120))           # archivo en media/contenidos/
+    url: Mapped[str] = mapped_column(String(300), default="")
+    activo: Mapped[bool] = mapped_column(Boolean, default=True)
+    orden: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class Evento(Base):
+    """Analítica del portal, sin datos personales: ni MAC, ni IP, ni teléfono."""
+    __tablename__ = "eventos"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    local_id: Mapped[int] = mapped_column(ForeignKey("locales.id"), index=True)
+    tipo: Mapped[str] = mapped_column(String(30), index=True)
+    ref: Mapped[str] = mapped_column(String(60), default="")          # producto, contenido o momento al que se refiere
+    fecha: Mapped[datetime] = mapped_column(DateTime, default=ahora, index=True)
 
 
 class Flyer(Base):

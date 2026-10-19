@@ -15,15 +15,16 @@ from fastapi.staticfiles import StaticFiles
 import seed
 from config import CORS_ORIGINS, MEDIA_DIR, WEB_DIR
 from routers import admin, portal
-from services import clima
+from services import catalogo, clima
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     seed.iniciar()
-    tarea = asyncio.create_task(clima.bucle())
+    tareas = [asyncio.create_task(clima.bucle()), asyncio.create_task(catalogo.bucle())]
     yield
-    tarea.cancel()
+    for t in tareas:
+        t.cancel()
 
 
 app = FastAPI(title="Chinkana WiFi", lifespan=lifespan)
@@ -32,7 +33,7 @@ app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*
 app.include_router(portal.router)
 app.include_router(admin.router)
 
-for sub in ("productos", "flyers"):
+for sub in ("productos", "flyers", "contenidos"):
     (MEDIA_DIR / sub).mkdir(parents=True, exist_ok=True)
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
