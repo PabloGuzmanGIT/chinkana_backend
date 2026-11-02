@@ -49,7 +49,7 @@ class Registro(BaseModel):
     telefono: str
     acepta_promos: bool          # casilla "Quiero las promos del día por WhatsApp" (opcional para navegar)
     mac: str | None = None
-    origen: str = "portal"       # portal (antes de conectarse) | listo (ya conectado)
+    origen: str = "portal"       # portal (antes de conectarse) | listo (ya conectado) | menu_dia | pension (botones del carrusel)
 
 
 @router.post("/api/portal/registro")
@@ -92,7 +92,7 @@ def registro(datos: Registro, db: Session = Depends(get_db)):
 
 
 # Lo que el portal puede registrar. La suscripción a WhatsApp la registra /registro (con consentimiento).
-TIPOS_EVENTO = {"portal_visita", "conexion_intento", "conexion", "promo_click", "menu_visita", "contenido_click"}
+TIPOS_EVENTO = {"portal_visita", "conexion_intento", "conexion", "promo_click", "menu_visita", "contenido_click", "menu_dia_click"}
 
 
 class EventoIn(BaseModel):

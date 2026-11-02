@@ -136,4 +136,12 @@ def construir(db: Session) -> dict:
                 .order_by(Contenido.orden, Contenido.id))])},
         "nosotros": {k: cfg[k] for k in ("nosotros_historia", "nosotros_objetivo", "direccion", "horario")},
         "enlaces": {k: cfg[k] for k in ("wa_canal", "instagram", "facebook", "tiktok", "resena_url")},
+        "carrusel": {k: _diapositiva(cfg, k) for k in ("menu_dia", "chapla")},
     }
+
+
+def _diapositiva(cfg: dict[str, str], clave: str) -> dict | None:
+    """Diapositiva extra del carrusel; None si está apagada en /admin."""
+    if cfg[f"{clave}_activo"] != "1":
+        return None
+    return {"titulo": cfg[f"{clave}_titulo"].strip(), "texto": cfg[f"{clave}_texto"].strip()}

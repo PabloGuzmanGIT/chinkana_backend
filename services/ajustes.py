@@ -26,6 +26,13 @@ DEFAULTS: dict[str, str] = {
     "propio_chocolate": "Chocolate elaborado en casa a partir del cacao, sin atajos: lo molemos y preparamos aquí mismo." + EJ,
     "nosotros_historia": "Chinkana nació en Ayacucho con una idea sencilla: un lugar cálido para tomar algo rico hecho por nosotros." + EJ,
     "nosotros_objetivo": "Que cada taza cuente de dónde viene, apoyando a productores locales." + EJ,
+    # Diapositivas extra del carrusel de la portada. Textos vacíos = el texto por defecto (en español o inglés).
+    "menu_dia_activo": "1",
+    "menu_dia_titulo": "",
+    "menu_dia_texto": "",
+    "chapla_activo": "1",
+    "chapla_titulo": "",
+    "chapla_texto": "",
     "direccion": "Ayacucho, Perú",
     "horario": "Lun a Dom · 8:00 a 22:00",
     "wa_canal": "",
